@@ -4,6 +4,7 @@ require 'sinatra/json'
 require 'ostruct'
 require 'json'
 require 'pry'
+require 'mail'
 
 enable :sessions
 
@@ -15,7 +16,7 @@ helpers do
 		end.join "\n---+---+---\n"
 	end
 
-	#checks board array for win conditions and returns the player tha won or 'false'
+	#checks board array for win conditions and returns the player that won or 'false'
 	def checkWin(ar)
 		w = false
 		lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]
@@ -38,8 +39,21 @@ helpers do
 	end
 end
 
+#setting Mandrill defaults for mail
+Mail.defaults do 
+	delivery_method :smtp, {
+		port: 587,
+		address: "smtp.mandrillapp.com",
+		user_name: ENV["MANDRILL_USERNAME"],
+		password: ENV["MANDRILL_PASSWORD"]
+	}
+end
+
 #array containing every game on the server
 games = []
+
+#hash linking e-mails to session id's and passwords
+users = {ENV["ADMIN_EMAIL"] => {password: ENV["ADMIN_PASSWORD"], id: SecureRandom.hex(16)}}
 
 get '/favicon.ico' do
 	404
@@ -94,7 +108,6 @@ end
 
 #lobby for creating new games
 get '/' do
-	@game = games.size + 1
 	haml :lobby
 end
 
@@ -124,3 +137,9 @@ __END__
 %body
 	%form(method="post" action="/")
 		%button(type="submit") New Game
+	%form(method="get" action="/login")
+		E-Mail: 
+		%input(type="text" name="email")
+		Password: 
+		%input(type="password" name="pword")
+		%button(type="submit") Log In

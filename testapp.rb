@@ -5,6 +5,8 @@ require 'ostruct'
 require 'json'
 require 'pry'
 
+enable :sessions
+
 helpers do
 	#takes an array with the states for each square and adds the formatting
 	def drawB(ar)
@@ -73,6 +75,14 @@ post '/' do
 
 	games.push(newGame)
 	redirect to("/#{id}")
+end
+
+get '/login' do
+	session[:token] = SecureRandom.hex(16)
+end
+
+get '/YOLO' do
+	session[:token]
 end
 
 #shows game board without submitting a turn

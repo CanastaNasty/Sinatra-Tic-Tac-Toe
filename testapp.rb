@@ -5,6 +5,7 @@ require 'ostruct'
 require 'json'
 require 'pry'
 require 'mail'
+require 'digest'
 
 enable :sessions
 
@@ -55,6 +56,9 @@ games = []
 #hash linking e-mails to session id's and passwords
 users = {ENV["ADMIN_EMAIL"] => {password: ENV["ADMIN_PASSWORD"], id: SecureRandom.hex(16)}}
 
+#hash containing registrations to be confirmed by e-mail
+confirmations = Hash.new
+
 get '/favicon.ico' do
 	404
 end
@@ -91,12 +95,51 @@ post '/' do
 	redirect to("/#{id}")
 end
 
-get '/login' do
-	session[:token] = SecureRandom.hex(16)
+#logins a user or creates a new user
+post '/login' do
+	session = OpenStruct.new
+	session.email = params[:email]
+	session.password = Digest::SHA1.hexdigest(params[:pword])
+	session.match = false
+	session.signup = false
+	if users.has_key?(session.email)
+		if users[session.email][password] = session.password
+			session.match =true
+			session[:token] = users[session.email][id]
+			json session.to_h
+		else
+			json session.to_h
+		end
+	else
+		session.signup = true
+		session.confirm = Digest::SHA1.hexdigest(session.email)
+		confirmations[session.confirm] = { 
+			"email" => session.email,
+			value: {
+				password: session.password, 
+				id: SecureRandom.hex(16)
+			}
+		}
+		Mail.deliver do
+			to session.email
+			from ENV["ADMIN_EMAIL"]
+			subject 'Welcome to Xtreme Tic-Tac-Toe'
+
+			html_part do
+				content_type 'text/html; charset=UTF-8'
+				body "<a href=\"/confirm/#{session.confirm}\">Confirm</a> your registration to Xtreme Tic-Tac-Toe"
+			end
+		end
+	end
 end
 
-get '/YOLO' do
-	session[:token]
+#confirms a registration
+get '/confirm/:confirmation' do
+	if confirmations.has_key?([params[:confirmation]])
+		users[confirmations[params[:confirmation[email]]]] = confirmations[params[:confirmation[value]]]
+		session[:token] = confirmations[params[:confirmation[value[id]]]]
+	end
+	redirect to ("/")
 end
 
 #shows game board without submitting a turn
@@ -134,12 +177,47 @@ __END__
 	%pre.board= drawB(@board)
 
 @@lobby
+:javascript
+	$.fn.serializeObject = function()
+		{
+		    var o = {};
+		    var a = this.serializeArray();
+		    $.each(a, function() {
+		        if (o[this.name] !== undefined) {
+		            if (!o[this.name].push) {
+		                o[this.name] = [o[this.name]];
+		            }
+		            o[this.name].push(this.value || '');
+		        } else {
+		            o[this.name] = this.value || '';
+		        }
+		    });
+		    return o;
+		};
+	$(document).ready(function() {
+		$("body").on("click", "#lsubmit", function() {
+			$.post("/login", #login.serializeObject, function(data) {
+				if (data.match == true) {
+					$(".session").html(Logged In)
+				}
+				else if (data.signup == true) {
+					$(".session").html(Confirmation e-mail sent)
+				}
+				else {
+					$(".error").html(Incorrect Login!)
+				}
+			});
+		});
+	});
+
 %body
+	.session
+		%form#login(method="post" action="/login")
+			%p.error
+			E-Mail: 
+			%input(type="text" name="email")
+			Password: 
+			%input(type="password" name="pword")
+			%button#lsubmit Log In
 	%form(method="post" action="/")
 		%button(type="submit") New Game
-	%form(method="get" action="/login")
-		E-Mail: 
-		%input(type="text" name="email")
-		Password: 
-		%input(type="password" name="pword")
-		%button(type="submit") Log In

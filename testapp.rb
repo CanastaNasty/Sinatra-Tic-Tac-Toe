@@ -106,9 +106,6 @@ post '/login' do
 		if users[session.email][password] = session.password
 			session.match =true
 			session[:token] = users[session.email][id]
-			json session.to_h
-		else
-			json session.to_h
 		end
 	else
 		session.signup = true
@@ -120,6 +117,7 @@ post '/login' do
 				id: SecureRandom.hex(16)
 			}
 		}
+		address = "#{ENV["HOST_PATH"]}/confirm/#{session.confirm}"
 		Mail.deliver do
 			to session.email
 			from ENV["ADMIN_EMAIL"]
@@ -127,10 +125,11 @@ post '/login' do
 
 			html_part do
 				content_type 'text/html; charset=UTF-8'
-				body "<a href=\"/confirm/#{session.confirm}\">Confirm</a> your registration to Xtreme Tic-Tac-Toe"
+				body "Confirm your registration to Xtreme Tic-Tac-Toe: <a href=#{address}>#{address}</a>"
 			end
 		end
 	end
+	json session.to_h
 end
 
 #confirms a registration
@@ -196,7 +195,7 @@ __END__
 		};
 	$(document).ready(function() {
 		$("body").on("click", "#lsubmit", function() {
-			$.post("/login", #login.serializeObject, function(data) {
+			$.post("/login", $("#login").serializeObject(), function(data) {
 				if (data.match == true) {
 					$(".session").html(Logged In)
 				}
@@ -207,6 +206,8 @@ __END__
 					$(".error").html(Incorrect Login!)
 				}
 			});
+
+			return false
 		});
 	});
 

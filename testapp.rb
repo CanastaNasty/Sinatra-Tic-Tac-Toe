@@ -6,6 +6,9 @@ require 'json'
 require 'pry'
 require 'mail'
 require 'digest'
+require 'sinatra/logger'
+
+set :root, '/home/david/Rails-Apps/Sinatra'
 
 enable :sessions
 
@@ -103,9 +106,9 @@ post '/login' do
 	session.match = false
 	session.signup = false
 	if users.has_key?(session.email)
-		if users[session.email][password] = session.password
+		if users[session.email][:password] = session.password
 			session.match =true
-			session[:token] = users[session.email][id]
+			session[:token] = users[session.email][:id]
 		end
 	else
 		session.signup = true
@@ -134,9 +137,11 @@ end
 
 #confirms a registration
 get '/confirm/:confirmation' do
-	if confirmations.has_key?([params[:confirmation]])
-		users[confirmations[params[:confirmation[email]]]] = confirmations[params[:confirmation[value]]]
-		session[:token] = confirmations[params[:confirmation[value[id]]]]
+	conf = params[:confirmation]
+	if confirmations.has_key?(conf)
+		users[confirmations[conf]["email"]] = confirmations[conf][:value]
+		session[:token] = confirmations[conf][:value][:id]
+		confirmations.delete(conf)
 	end
 	redirect to ("/")
 end
@@ -197,21 +202,21 @@ __END__
 		$("body").on("click", "#lsubmit", function() {
 			$.post("/login", $("#login").serializeObject(), function(data) {
 				if (data.match == true) {
-					$(".session").html(Logged In)
+					$(".session").html("Logged In")
 				}
 				else if (data.signup == true) {
-					$(".session").html(Confirmation e-mail sent)
+					$(".session").html("Confirmation e-mail sent")
 				}
 				else {
-					$(".error").html(Incorrect Login!)
+					$(".error").html("Incorrect Login!")
 				}
-			});
+			}, "json");
 
-			return false
 		});
 	});
 
 %body
+	.error
 	.session
 		%form#login(method="post" action="/login")
 			%p.error
@@ -219,6 +224,6 @@ __END__
 			%input(type="text" name="email")
 			Password: 
 			%input(type="password" name="pword")
-			%button#lsubmit Log In
+		%button#lsubmit Log In
 	%form(method="post" action="/")
 		%button(type="submit") New Game

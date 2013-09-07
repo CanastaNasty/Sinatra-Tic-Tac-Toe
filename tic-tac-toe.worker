@@ -1,0 +1,2 @@
+runtime "ruby"
+exec "iron-toe.rb"

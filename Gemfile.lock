@@ -10,6 +10,12 @@ GEM
       thor (>= 0.13.6)
     haml (4.0.3)
       tilt
+    iron_core (1.0.1)
+      rest (>= 2.2.0)
+    iron_worker_ng (1.0.2)
+      bundler (>= 1.2.0)
+      iron_core (>= 1.0.0)
+      rubyzip (= 0.9.9)
     json (1.7.7)
     mail (2.5.4)
       mime-types (~> 1.16)
@@ -20,6 +26,7 @@ GEM
     method_source (0.8.2)
     mime-types (1.25)
     multi_json (1.7.9)
+    net-http-persistent (2.9)
     polyglot (0.3.3)
     pry (0.9.12.2)
       coderay (~> 1.0.5)
@@ -31,6 +38,12 @@ GEM
     rack-test (0.6.2)
       rack (>= 1.0)
     rb-readline (0.5.0)
+    rest (2.6.3)
+      net-http-persistent
+      rest-client (>= 0.3.0)
+    rest-client (1.6.7)
+      mime-types (>= 1.16)
+    rubyzip (0.9.9)
     shotgun (0.9)
       rack (>= 1.0)
     sinatra (1.4.3)
@@ -59,6 +72,7 @@ PLATFORMS
 DEPENDENCIES
   foreman
   haml
+  iron_worker_ng
   json
   mail
   mandrill-api

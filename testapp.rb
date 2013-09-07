@@ -7,6 +7,7 @@ require 'pry'
 require 'mail'
 require 'digest'
 require 'sinatra/logger'
+require 'iron_worker_ng'
 
 set :root, '/home/david/Rails-Apps/Sinatra'
 

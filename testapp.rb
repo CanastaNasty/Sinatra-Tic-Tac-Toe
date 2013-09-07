@@ -57,7 +57,10 @@ end
 games = []
 
 #hash linking e-mails to session id's and passwords
-users = {ENV["ADMIN_EMAIL"] => {password: ENV["ADMIN_PASSWORD"], id: SecureRandom.hex(16)}}
+users = {ENV["ADMIN_EMAIL"] => {password: Digest::SHA1.hexdigest(ENV["ADMIN_PASSWORD"]), id: SecureRandom.hex(16)}}
+
+#array containing list of valid session_ids
+ids = []
 
 #hash containing registrations to be confirmed by e-mail
 confirmations = Hash.new
@@ -106,10 +109,11 @@ post '/login' do
 	session.match = false
 	session.signup = false
 	if users.has_key?(session.email)
-		if users[session.email][:password] = session.password
-			session.match =true
+		if users[session.email][:password] == session.password
+			session.match = true
 			session[:token] = users[session.email][:id]
 		end
+		logger.warn(session.match)
 	else
 		session.signup = true
 		session.confirm = Digest::SHA1.hexdigest(session.email)
@@ -141,9 +145,15 @@ get '/confirm/:confirmation' do
 	if confirmations.has_key?(conf)
 		users[confirmations[conf]["email"]] = confirmations[conf][:value]
 		session[:token] = confirmations[conf][:value][:id]
+		ids.push(session[:token])
 		confirmations.delete(conf)
 	end
 	redirect to ("/")
+end
+
+#returns list of valid session ids
+get '/ids' do
+	json ids
 end
 
 #shows game board without submitting a turn
@@ -182,6 +192,8 @@ __END__
 
 @@lobby
 :javascript
+	var sess = #{session[:token].to_json}
+
 	$.fn.serializeObject = function()
 		{
 		    var o = {};
@@ -198,6 +210,7 @@ __END__
 		    });
 		    return o;
 		};
+
 	$(document).ready(function() {
 		$("body").on("click", "#lsubmit", function() {
 			$.post("/login", $("#login").serializeObject(), function(data) {
@@ -213,6 +226,13 @@ __END__
 			}, "json");
 
 		});
+	});
+
+	$.getJSON('/ids', function(data) {
+		var x=$(".session");
+		if (data.indexOf(sess)!=-1) {
+			x.html("Logged In")
+		};
 	});
 
 %body

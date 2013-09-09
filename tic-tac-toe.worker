@@ -1,2 +1,3 @@
-runtime "ruby"
+gemfile "/home/david/Rails-Apps/Sinatra/Gemfile"
+
 exec "iron-toe.rb"
